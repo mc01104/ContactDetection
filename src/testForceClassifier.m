@@ -219,13 +219,40 @@ else
     tmpName = strcat(data.DirName, '\', data.Filenames(data.Index).name);
 end
 tmpImage = imread(tmpName);
+axes(handles.ImageViewer);
 imshow(tmpImage, 'Parent', handles.ImageViewer);
-redChannel = tmpImage(:, :, 3);
 
-histVal = imhist(redChannel);
-plot(handles.Histogram, histVal, 'LineWidth', 2.5);
+tmp_gray = rgb2gray(tmpImage);
 
-axis([0 255 0 1200]);
+% Logarithm transformation
+% tmp_gray = log(1 + double(tmp_gray));
+% tmp_gray = mat2gray(tmp_gray);
+
+% Histogram Equalization
+% tmp_gray = histeq(tmp_gray);
+
+C = corner(tmp_gray);
+if ~isempty(C)
+    C = postprocess_corner_detection(C);
+end
+hold( handles.ImageViewer, 'on');
+plot(C(:, 1), C(:, 2), 'g*');
+hold(handles.ImageViewer, 'off');
+
+R = double(tmpImage(:, :, 1));
+G = double(tmpImage(:, :, 2));
+B = double(tmpImage(:, :, 3));
+
+% convert to opponent space
+O1 = (R-G)./sqrt(2); % red-green
+O2 = (R+G-2*B)./sqrt(6); % yello-blue
+O3 = (R+G+B)./sqrt(3);
+axes(handles.Histogram);
+histogram(O2, 100);
+axis([-100 100 0 8000]);
+axes(handles.Histogram2);
+histogram(O1, 100);
+axis([-100 100 0 8000]);
 
 
 % --- Executes on button press in Rewind.
@@ -236,3 +263,14 @@ function Rewind_Callback(hObject, eventdata, handles)
 global data;
 data.Index = 1;
 RenderGUI(handles);
+
+
+function C = postprocess_corner_detection(C)
+ind = [];
+for i = 1:size(C, 1)
+    if C(i, 1) < 100 || C(i, 2) < 40 || C(i, 1) > 200 || C(i, 2) > 200     
+        ind = [ind i];
+    end
+end
+
+C(ind, :) = [];
