@@ -222,7 +222,6 @@ tmpImage = imread(tmpName);
 axes(handles.ImageViewer);
 imshow(tmpImage, 'Parent', handles.ImageViewer);
 
-tmp_gray = rgb2gray(tmpImage);
 
 % Logarithm transformation
 % tmp_gray = log(1 + double(tmp_gray));
@@ -230,6 +229,10 @@ tmp_gray = rgb2gray(tmpImage);
 
 % Histogram Equalization
 % tmp_gray = histeq(tmp_gray);
+
+tmp_gray = rgb2gray(tmpImage);
+
+
 
 C = corner(tmp_gray);
 if ~isempty(C)
@@ -243,6 +246,8 @@ R = double(tmpImage(:, :, 1));
 G = double(tmpImage(:, :, 2));
 B = double(tmpImage(:, :, 3));
 
+
+
 % convert to opponent space
 O1 = (R-G)./sqrt(2); % red-green
 O2 = (R+G-2*B)./sqrt(6); % yello-blue
@@ -253,6 +258,14 @@ axis([-100 100 0 8000]);
 axes(handles.Histogram2);
 histogram(O1, 100);
 axis([-100 100 0 8000]);
+
+% thresholding opponent 1 image for red vs other
+O_ =  O1;
+O_(O1>0.0) = 0.0;
+O_(O1<=0.0) = 1.0;
+
+imshow(O_, 'Parent', handles.ImageViewer);
+mean2(O_)
 
 
 % --- Executes on button press in Rewind.
